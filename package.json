@@ -4,6 +4,7 @@
   "description": "Learn",
   "main": "index.js",
   "type": "module",
+  "start": "node index.mjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
