@@ -19,7 +19,7 @@ const options = {
       },
     ],
   },
-  apis: ["./server.js"], // reads comments from server.js
+  apis: ["./index.mjs"], // reads comments from server.js
 };
 
 const swaggerSpec = swaggerJsdoc(options);
