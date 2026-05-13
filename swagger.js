@@ -18,6 +18,15 @@ const options = {
         description: "Production EC2 server",
       },
     ],
+     components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+        },
+      },
+    },
   },
   apis: ["./index.mjs"], // reads comments from server.js
 };

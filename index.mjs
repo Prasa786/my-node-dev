@@ -4,11 +4,14 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand, UpdateCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "crypto";
 import bcrypt from "bcrypt";
+import jwt from jsonwebtoken;
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
+import { json } from "stream/consumers";
+import auth from "./middleware.js";
 
 
-
+configDotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -167,9 +170,18 @@ app.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid password" });
     }
 
+    const token =jwt.sign({
+      id:user.id,
+      email:user.email,
+      name:user.name
+    },
+    process.env.JWT_SECRET,
+    {expiresIn : "1h"});
+
     res.json({
       message: "Login successful",
-      user: { id: user.id, name: user.name, email: user.email }
+      user: { id: user.id, name: user.name, email: user.email },
+      token
     });
   } catch (err) {
     console.error(err);
