@@ -1,6 +1,8 @@
+import { fail } from "assert";
 import swaggerJsdoc from "swagger-jsdoc";
 
 const options = {
+    failOnErrors: false, // Throw errors if the specification is invalid
   definition: {
     openapi: "3.0.0",
     info: {
