@@ -10,46 +10,36 @@ import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
 import auth from "./middleware.js";
 
-
 dotenv.config();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// DB connection
 const client = new DynamoDBClient({ region: "eu-north-1" });
 const db = DynamoDBDocumentClient.from(client);
-
-// Table name
 const TABLE = "development";
 
-//Cors
 app.use(cors());
 app.use(express.json());
-
-// Swagger UI route
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
-// GET - Retrieve all users
 
 /**
  * @swagger
  * /users:
  *   get:
  *     summary: Get all users
+ *     security:
+ *       - bearerAuth: []
  *     description: Retrieve all users from DynamoDB
  *     responses:
  *       200:
  *         description: List of users
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 users:
- *                   type: array
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Error fetching users
  */
-
-app.get("/users", auth,async (req, res) => {
+app.get("/users", auth, async (req, res) => {
   try {
     const result = await db.send(new ScanCommand({ TableName: TABLE }));
     res.json({ users: result.Items });
@@ -58,8 +48,6 @@ app.get("/users", auth,async (req, res) => {
     res.status(500).json({ message: "Error fetching users" });
   }
 });
-
-// POST - Create user
 
 /**
  * @swagger
@@ -94,8 +82,7 @@ app.get("/users", auth,async (req, res) => {
  *       500:
  *         description: Error creating user
  */
-
-app.post("/users",auth, async (req, res) => {
+app.post("/users", async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ message: "All fields are required" });
@@ -116,13 +103,11 @@ app.post("/users",auth, async (req, res) => {
   }
 });
 
-// POST - Login
-
 /**
  * @swagger
  * /login:
  *   post:
- *     summary: Login a user based on the credentials
+ *     summary: Login and get JWT token
  *     requestBody:
  *       required: true
  *       content:
@@ -133,22 +118,21 @@ app.post("/users",auth, async (req, res) => {
  *               - email
  *               - password
  *             properties:
-
  *               email:
  *                 type: string
- *                 example: rps@gmail.com
+ *                 example: prasanna@gmail.com
  *               password:
  *                 type: string
  *                 example: "123456"
  *     responses:
  *       200:
- *         description: Login successful
- *       400:
+ *         description: Login successful - returns JWT token
+ *       404:
  *         description: User not found
  *       401:
- *        description: Invalid password
+ *         description: Invalid password
  *       500:
- *         description: Error logging in 
+ *         description: Error logging in
  */
 app.post("/login", async (req, res) => {
   try {
@@ -170,18 +154,16 @@ app.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid password" });
     }
 
-    const token =jwt.sign({
-      id:user.id,
-      email:user.email,
-      name:user.name
-    },
-    process.env.JWT_SECRET,
-    {expiresIn : "1h"});
+    const token = jwt.sign(
+      { id: user.id, email: user.email, name: user.name },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
     res.json({
       message: "Login successful",
-      user: { id: user.id, name: user.name, email: user.email },
-      token
+      token,
+      user: { id: user.id, name: user.name, email: user.email }
     });
   } catch (err) {
     console.error(err);
@@ -189,14 +171,13 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// PUT - Fully update user
-
-
 /**
  * @swagger
  * /users/{id}:
  *   put:
  *     summary: Fully update a user
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -219,21 +200,23 @@ app.post("/login", async (req, res) => {
  *                 example: Prasanna
  *               email:
  *                 type: string
- *                 example: rps@gmail.com
+ *                 example: prasanna@gmail.com
  *               password:
  *                 type: string
- *                 example: "new Password"
+ *                 example: "newpassword"
  *     responses:
  *       200:
  *         description: User fully updated
  *       400:
  *         description: All fields are required
+ *       401:
+ *         description: Unauthorized
  *       404:
- *        description: User not found
+ *         description: User not found
  *       500:
  *         description: Error updating user
  */
-app.put("/users/:id", auth,async (req, res) => {
+app.put("/users/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, email, password } = req.body;
@@ -251,15 +234,8 @@ app.put("/users/:id", auth,async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    //  hash password properly
     const hashPassword = await bcrypt.hash(password, 10);
-
-    const updatedUser = {
-      id,
-      name,
-      email,
-      password: hashPassword  // ✅ now correctly defined
-    };
+    const updatedUser = { id, name, email, password: hashPassword };
 
     await db.send(new PutCommand({ TableName: TABLE, Item: updatedUser }));
     res.json({ message: "User fully updated", user: { id, name, email } });
@@ -269,12 +245,13 @@ app.put("/users/:id", auth,async (req, res) => {
   }
 });
 
-// PATCH - Partially update user
 /**
  * @swagger
  * /users/{id}:
  *   patch:
  *     summary: Partially update a user
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -293,20 +270,21 @@ app.put("/users/:id", auth,async (req, res) => {
  *                 example: Prasanna
  *               email:
  *                 type: string
- *                 example: rps@gmail.com
+ *                 example: prasanna@gmail.com
  *               password:
  *                 type: string
  *                 example: "123456"
  *     responses:
  *       200:
- *         description: User partially updated successfully
- *      
+ *         description: User partially updated
+ *       401:
+ *         description: Unauthorized
  *       404:
  *         description: User not found
  *       500:
  *         description: Error updating user
  */
-app.patch("/users/:id",auth, async (req, res) => {
+app.patch("/users/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const data = req.body;
@@ -349,15 +327,14 @@ app.patch("/users/:id",auth, async (req, res) => {
   }
 });
 
-// GET - Single user
-
 /**
  * @swagger
  * /users/{id}:
  *   get:
- *     summary: Get a user
- *     description: Retrieve Specific user from 
- *      parameters:
+ *     summary: Get single user
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
  *       - in: path
  *         name: id
  *         required: true
@@ -366,13 +343,15 @@ app.patch("/users/:id",auth, async (req, res) => {
  *         description: User ID
  *     responses:
  *       200:
- *         description:  Single user data
- 404:
+ *         description: Single user data
+ *       401:
+ *         description: Unauthorized
+ *       404:
  *         description: User not found
  *       500:
  *         description: Error fetching user
  */
-app.get("/users/:id",auth, async (req, res) => {
+app.get("/users/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await db.send(new GetCommand({
@@ -389,14 +368,13 @@ app.get("/users/:id",auth, async (req, res) => {
   }
 });
 
-// DELETE - Delete user
-
-
 /**
  * @swagger
  * /users/{id}:
  *   delete:
  *     summary: Delete a user
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -407,10 +385,12 @@ app.get("/users/:id",auth, async (req, res) => {
  *     responses:
  *       200:
  *         description: User deleted
+ *       401:
+ *         description: Unauthorized
  *       500:
  *         description: Error deleting user
  */
-app.delete("/users/:id",auth, async (req, res) => {
+app.delete("/users/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
     await db.send(new DeleteCommand({
@@ -423,4 +403,5 @@ app.delete("/users/:id",auth, async (req, res) => {
     res.status(500).json({ message: "Error deleting user" });
   }
 });
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
