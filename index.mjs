@@ -38,7 +38,7 @@ app.post("/users", async (req, res) => {
   }
   try{
 
-  const hashPassword =await bcrypt.hashPassword(password,10);
+  const hashPassword =await bcrypt.hash(password,10);
   const user = {
     id: randomUUID(), 
     name,
@@ -139,7 +139,7 @@ app.patch("/users/:id", async (req, res) => {
   // dynamically build update for only sent fields
   const keys = Object.keys(data);
   if(data.password){
-    data.password =await bcrypt.hashPassword(data.password,10);
+    data.password =await bcrypt.hash(data.password,10);
   } // ["name"] or ["email"] or ["name", "email" ,"password"]
 
   const UpdateExpression = "set " + keys.map((k) => `#${k} = :${k}`).join(", ");
