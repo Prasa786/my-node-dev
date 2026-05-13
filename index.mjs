@@ -17,6 +17,25 @@ const TABLE = "development";
 app.use(express.json());
 
 // GET - Retrieve all users
+
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Get all users
+ *     description: Retrieve all users from DynamoDB
+ *     responses:
+ *       200:
+ *         description: List of users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 users:
+ *                   type: array
+ */
+
 app.get("/users", async (req, res) => {
   try {
     const result = await db.send(new ScanCommand({ TableName: TABLE }));
@@ -28,6 +47,41 @@ app.get("/users", async (req, res) => {
 });
 
 // POST - Create user
+
+/**
+ * @swagger
+ * /users:
+ *   post:
+ *     summary: Create a new user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: John Doe
+ *               email:
+ *                 type: string
+ *                 example: john@gmail.com
+ *               password:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: User created successfully
+ *       400:
+ *         description: All fields are required
+ *       500:
+ *         description: Error creating user
+ */
+
 app.post("/users", async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
@@ -50,6 +104,38 @@ app.post("/users", async (req, res) => {
 });
 
 // POST - Login
+
+/**
+ * @swagger
+ * /login:
+ *   post:
+ *     summary: Login a user based on the credentials
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+
+ *               email:
+ *                 type: string
+ *                 example: rps@gmail.com
+ *               password:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: User logged in successfully
+ *       400:
+ *         description: All fields are required
+ *       500:
+ *         description: Error logging in user
+ */
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -81,6 +167,47 @@ app.post("/login", async (req, res) => {
 });
 
 // PUT - Fully update user
+
+
+/**
+ * @swagger
+ * /users/:id:
+ *   put:
+ *     summary: Fully update a user
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Prasanna
+ *               email:
+ *                 type: string
+ *                 example: rps@gmail.com
+ *               password:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: User fully updated successfully
+ *       400:
+ *         description: All fields are required
+ *       500:
+ *         description: Error updating user
+ */
 app.put("/users/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -99,7 +226,7 @@ app.put("/users/:id", async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // ✅ Fixed: hash password properly
+    //  hash password properly
     const hashPassword = await bcrypt.hash(password, 10);
 
     const updatedUser = {
@@ -118,6 +245,45 @@ app.put("/users/:id", async (req, res) => {
 });
 
 // PATCH - Partially update user
+/**
+ * @swagger
+ * /users/:id:
+ *   patch:
+ *     summary: Partially update a user
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - email
+ *               - password
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Prasanna
+ *               email:
+ *                 type: string
+ *                 example: rps@gmail.com
+ *               password:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: User partially updated successfully
+ *       400:
+ *         description: All fields are required
+ *       500:
+ *         description: Error updating user
+ */
 app.patch("/users/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -162,6 +328,24 @@ app.patch("/users/:id", async (req, res) => {
 });
 
 // GET - Single user
+
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Get all users
+ *     description: Retrieve Specific user from DynamoDB
+ *     responses:
+ *       200:
+ *         description:  Single user data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 users:
+ *                   type: single object
+ */
 app.get("/users/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -180,6 +364,26 @@ app.get("/users/:id", async (req, res) => {
 });
 
 // DELETE - Delete user
+
+
+/**
+ * @swagger
+ * /users/{id}:
+ *   delete:
+ *     summary: Delete a user
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User deleted
+ *       500:
+ *         description: Error deleting user
+ */
 app.delete("/users/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -193,5 +397,4 @@ app.delete("/users/:id", async (req, res) => {
     res.status(500).json({ message: "Error deleting user" });
   }
 });
-
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
