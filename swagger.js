@@ -14,7 +14,7 @@ const options = {
         description: "Local server",
       },
       {
-        url: "http://YOUR-EC2-PUBLIC-IP",
+        url: "http://13.60.167.219",
         description: "Production EC2 server",
       },
     ],
