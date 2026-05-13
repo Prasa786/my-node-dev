@@ -3,6 +3,8 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand, UpdateCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "crypto";
 import bcrypt from "bcrypt";
+import swaggerUi from "swagger-ui-express";
+import swaggerSpec from "./swagger.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
