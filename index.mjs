@@ -18,6 +18,10 @@ const TABLE = "development";
 
 app.use(express.json());
 
+// Swagger UI route
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+
 // GET - Retrieve all users
 
 /**
