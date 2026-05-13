@@ -1,11 +1,11 @@
 import jwt from "jsonwebtoken";
-const auth = (req,res,headers) => {
+const auth = (req,res,next) => {
     try{
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer")){
+    if (!authHeader || !authHeader.startsWith("Bearer ")){
         return res.status(401).json({
             message: "Acccess denied, No Token Provided"
-        })
+        });
     }
     const token = authHeader.split(" ")[1];
    
@@ -19,10 +19,5 @@ const auth = (req,res,headers) => {
             message: "Invalid Token"
         });
     };
-
-    export default auth;
-
-
-
-
 }
+export default auth;

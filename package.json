@@ -2,7 +2,7 @@
   "name": "amazon-lambda",
   "version": "1.0.0",
   "description": "Learn",
-  "main": "index.js",
+  "main": "index.mjs",
   "type": "module",
   "start": "node index.mjs",
   "scripts": {
