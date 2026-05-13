@@ -72,10 +72,10 @@ app.get("/users", async (req, res) => {
  *             properties:
  *               name:
  *                 type: string
- *                 example: John Doe
+ *                 example: Prasanna
  *               email:
  *                 type: string
- *                 example: john@gmail.com
+ *                 example: prasanna@gmail.com
  *               password:
  *                 type: string
  *                 example: "123456"
@@ -123,7 +123,6 @@ app.post("/users", async (req, res) => {
  *           schema:
  *             type: object
  *             required:
- *               - name
  *               - email
  *               - password
  *             properties:
@@ -136,11 +135,13 @@ app.post("/users", async (req, res) => {
  *                 example: "123456"
  *     responses:
  *       200:
- *         description: User logged in successfully
+ *         description: Login successful
  *       400:
- *         description: All fields are required
+ *         description: User not found
+ *      401:
+ *        description: Invalid password
  *       500:
- *         description: Error logging in user
+ *         description: Error logging in 
  */
 app.post("/login", async (req, res) => {
   try {
@@ -177,7 +178,7 @@ app.post("/login", async (req, res) => {
 
 /**
  * @swagger
- * /users/:id:
+ * /users/{id}:
  *   put:
  *     summary: Fully update a user
  *     parameters:
@@ -205,12 +206,14 @@ app.post("/login", async (req, res) => {
  *                 example: rps@gmail.com
  *               password:
  *                 type: string
- *                 example: "123456"
+ *                 example: "new Password"
  *     responses:
  *       200:
- *         description: User fully updated successfully
+ *         description: User fully updated
  *       400:
  *         description: All fields are required
+ *       404:
+ *        description: User not found
  *       500:
  *         description: Error updating user
  */
@@ -253,7 +256,7 @@ app.put("/users/:id", async (req, res) => {
 // PATCH - Partially update user
 /**
  * @swagger
- * /users/:id:
+ * /users/:{id}:
  *   patch:
  *     summary: Partially update a user
  *     parameters:
@@ -268,10 +271,6 @@ app.put("/users/:id", async (req, res) => {
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - name
- *               - email
- *               - password
  *             properties:
  *               name:
  *                 type: string
@@ -285,8 +284,9 @@ app.put("/users/:id", async (req, res) => {
  *     responses:
  *       200:
  *         description: User partially updated successfully
- *       400:
- *         description: All fields are required
+ *      
+ *       404:
+ *         description: User not found
  *       500:
  *         description: Error updating user
  */
@@ -337,20 +337,24 @@ app.patch("/users/:id", async (req, res) => {
 
 /**
  * @swagger
- * /users:
+ * /users/{id}:
  *   get:
- *     summary: Get all users
- *     description: Retrieve Specific user from DynamoDB
+ *     summary: Get a user
+ *     description: Retrieve Specific user from 
+ *      parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
  *     responses:
  *       200:
  *         description:  Single user data
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 users:
- *                   type: single object
+ 404:
+ *         description: User not found
+ *       500:
+ *         description: Error fetching user
  */
 app.get("/users/:id", async (req, res) => {
   try {
