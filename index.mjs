@@ -1,10 +1,13 @@
 import express from "express";
+import cors from "cors";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand, UpdateCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "crypto";
 import bcrypt from "bcrypt";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
+
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,11 +19,12 @@ const db = DynamoDBDocumentClient.from(client);
 // Table name
 const TABLE = "development";
 
+//Cors
+app.use(cors());
 app.use(express.json());
 
 // Swagger UI route
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
 
 // GET - Retrieve all users
 
