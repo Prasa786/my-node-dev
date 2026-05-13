@@ -8,11 +8,10 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
-import { json } from "stream/consumers";
 import auth from "./middleware.js";
 
 
-configDotenv.config();
+dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -50,7 +49,7 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
  *                   type: array
  */
 
-app.get("/users", async (req, res) => {
+app.get("/users", auth,async (req, res) => {
   try {
     const result = await db.send(new ScanCommand({ TableName: TABLE }));
     res.json({ users: result.Items });
@@ -96,7 +95,7 @@ app.get("/users", async (req, res) => {
  *         description: Error creating user
  */
 
-app.post("/users", async (req, res) => {
+app.post("/users",auth, async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ message: "All fields are required" });
@@ -146,7 +145,7 @@ app.post("/users", async (req, res) => {
  *         description: Login successful
  *       400:
  *         description: User not found
- *      401:
+ *       401:
  *        description: Invalid password
  *       500:
  *         description: Error logging in 
@@ -234,7 +233,7 @@ app.post("/login", async (req, res) => {
  *       500:
  *         description: Error updating user
  */
-app.put("/users/:id", async (req, res) => {
+app.put("/users/:id", auth,async (req, res) => {
   try {
     const { id } = req.params;
     const { name, email, password } = req.body;
@@ -273,7 +272,7 @@ app.put("/users/:id", async (req, res) => {
 // PATCH - Partially update user
 /**
  * @swagger
- * /users/:{id}:
+ * /users/{id}:
  *   patch:
  *     summary: Partially update a user
  *     parameters:
@@ -307,7 +306,7 @@ app.put("/users/:id", async (req, res) => {
  *       500:
  *         description: Error updating user
  */
-app.patch("/users/:id", async (req, res) => {
+app.patch("/users/:id",auth, async (req, res) => {
   try {
     const { id } = req.params;
     const data = req.body;
@@ -373,7 +372,7 @@ app.patch("/users/:id", async (req, res) => {
  *       500:
  *         description: Error fetching user
  */
-app.get("/users/:id", async (req, res) => {
+app.get("/users/:id",auth, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await db.send(new GetCommand({
@@ -411,7 +410,7 @@ app.get("/users/:id", async (req, res) => {
  *       500:
  *         description: Error deleting user
  */
-app.delete("/users/:id", async (req, res) => {
+app.delete("/users/:id",auth, async (req, res) => {
   try {
     const { id } = req.params;
     await db.send(new DeleteCommand({
