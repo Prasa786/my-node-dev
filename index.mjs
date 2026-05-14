@@ -9,6 +9,7 @@ import jwt from "jsonwebtoken";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
 import auth from "./middleware.js";
+import session from "express-session";
 import cookieParser from "cookie-parser";
 
 dotenv.config();
@@ -27,6 +28,18 @@ app.use(cors({
 ));
 app.use(express.json());
 app.use(cookieParser());
+app.use(session({
+  secret:process.env.SESSION_SECRET,
+  resave:false,
+  saveUninitialized:false,
+  cookie:{
+    httpOnly:true,
+      secure:true,
+      sameSite:true,
+      maxAge:1000*60*60
+  }
+
+}))
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 /**
@@ -166,11 +179,18 @@ app.post("/login", async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.cookie("token" ,token, {
+
+    req.session.user= {
+      id=user.id,
+      email=user.email,
+      password=user.password
+    }
+   
+    res.cookie("token" , token ,{
       httpOnly:true,
-      secure:true,
-      sameSite:true,
-      maxAge:1000*60*60
+      secure:false,
+      sameSite:"lax",
+      maxAge:1000*3600
     })
 
     res.json({
@@ -417,6 +437,55 @@ app.delete("/users/:id", auth, async (req, res) => {
   }
 });
 
+
+
+/**
+ * @swagger
+ * /me
+ *   get:
+ *     summary: To check the Session 
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Single user data
+ *       401:
+ *         description: Unauthorized
+ */
+
+app.get("/me", auth , (req,res) => {
+    try{
+      if(req.session && req.session.user){
+        return res.json(
+          {
+             loggedIn:true,
+             source:"session",
+             user:req.session.user
+          })
+      }
+
+      if(req.user){
+        return res.json({
+          loggedIn:true,
+          source:jwt,
+          user:req.user
+        })
+      }
+
+      res.status(401).json({
+        message:"Un Authorised Access to view Session Detail "
+      })
+    }
+    catch(error){
+      console.error("Error ",err)
+      res.status(401).json({
+        message:"Erro in Session Configuration"
+      })
+
+    }
+} )
+
+
 /**
  * @swagger
  * /logout:
@@ -435,9 +504,23 @@ app.delete("/users/:id", auth, async (req, res) => {
 
 app.post("/logout" ,auth ,(req,res) =>{
   try{
-
-    res.clearCookie("token");
-    res.json({message:"Logged out Successfully"});
+    if(req.session){
+      req.destroy((err)=>{
+         if(err){
+            console.log("Error ",err);
+            res.status(500).json({
+              message:"Logout Failed"
+            })
+        }
+      })
+      res.clearCookie("token"); //token 
+      res.clearCookie("connect.sid"); //session id 
+    }
+    else{
+      res.clearCookie("token"); //token 
+      res.clearCookie("connect.sid"); //session id 
+      return res.status(200).json({message:"Logged out Successfully"});
+    }
   }
   catch(error){
     console.error("Error logging out", error);
