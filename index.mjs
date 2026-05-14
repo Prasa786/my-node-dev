@@ -82,7 +82,7 @@ app.get("/users", auth, async (req, res) => {
  *       500:
  *         description: Error creating user
  */
-app.post("/users", async (req, res) => {
+app.post("/users", auth, async (req, res) => {
   const { name, email, password } = req.body;
   if (!name || !email || !password) {
     return res.status(400).json({ message: "All fields are required" });

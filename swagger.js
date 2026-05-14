@@ -16,7 +16,7 @@ const options = {
         description: "Local server",
       },
       {
-        url: "http://13.60.167.219",
+        url: "http://16.170.252.49",
         description: "Production EC2 server",
       },
     ],
@@ -30,7 +30,7 @@ const options = {
       },
     },
   },
-  apis: ["./index.mjs"], // reads comments from server.js
+  apis: ["./index.mjs"], 
 };
 
 const swaggerSpec = swaggerJsdoc(options);
