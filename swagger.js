@@ -1,4 +1,3 @@
-import { fail } from "assert";
 import swaggerJsdoc from "swagger-jsdoc";
 
 const options = {

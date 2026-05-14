@@ -1,7 +1,14 @@
 import express from "express";
 import cors from "cors";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand, GetCommand, ScanCommand, UpdateCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DynamoDBDocumentClient,
+  PutCommand,
+  GetCommand,
+  ScanCommand,
+  UpdateCommand,
+  DeleteCommand,
+} from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "crypto";
 import bcrypt from "bcrypt";
 import dotenv from "dotenv";
@@ -21,25 +28,27 @@ const client = new DynamoDBClient({ region: "eu-north-1" });
 const db = DynamoDBDocumentClient.from(client);
 const TABLE = "development";
 
-app.use(cors({ 
-  origin:true,
-  crederntials:true
-}
-));
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  }),
+);
 app.use(express.json());
 app.use(cookieParser());
-app.use(session({
-  secret:process.env.SESSION_SECRET,
-  resave:false,
-  saveUninitialized:false,
-  cookie:{
-    httpOnly:true,
-      secure:true,
-      sameSite:true,
-      maxAge:1000*60*60
-  }
-
-}))
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: true,
+      sameSite: true,
+      maxAge: 1000 * 60 * 60,
+    },
+  }),
+);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 /**
@@ -112,7 +121,7 @@ app.post("/users", auth, async (req, res) => {
       id: randomUUID(),
       name,
       email,
-      password: hashPassword
+      password: hashPassword,
     };
     await db.send(new PutCommand({ TableName: TABLE, Item: user }));
     res.json({ message: "User created", user: { id: user.id, name, email } });
@@ -157,11 +166,13 @@ app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const result = await db.send(new ScanCommand({
-      TableName: TABLE,
-      FilterExpression: "email = :email",
-      ExpressionAttributeValues: { ":email": email }
-    }));
+    const result = await db.send(
+      new ScanCommand({
+        TableName: TABLE,
+        FilterExpression: "email = :email",
+        ExpressionAttributeValues: { ":email": email },
+      }),
+    );
 
     const user = result.Items[0];
     if (!user) {
@@ -176,27 +187,26 @@ app.post("/login", async (req, res) => {
     const token = jwt.sign(
       { id: user.id, email: user.email, name: user.name },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "1h" },
     );
 
+    req.session.user = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+    };
 
-    req.session.user= {
-      id=user.id,
-      email=user.email,
-      password=user.password
-    }
-   
-    res.cookie("token" , token ,{
-      httpOnly:true,
-      secure:false,
-      sameSite:"lax",
-      maxAge:1000*3600
-    })
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 1000 * 3600,
+    });
 
     res.json({
       message: "Login successful",
       token,
-      user: { id: user.id, name: user.name, email: user.email }
+      user: { id: user.id, name: user.name, email: user.email },
     });
   } catch (err) {
     console.error(err);
@@ -258,10 +268,12 @@ app.put("/users/:id", auth, async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const existing = await db.send(new GetCommand({
-      TableName: TABLE,
-      Key: { id }
-    }));
+    const existing = await db.send(
+      new GetCommand({
+        TableName: TABLE,
+        Key: { id },
+      }),
+    );
 
     if (!existing.Item) {
       return res.status(404).json({ message: "User not found" });
@@ -322,10 +334,12 @@ app.patch("/users/:id", auth, async (req, res) => {
     const { id } = req.params;
     const data = req.body;
 
-    const existing = await db.send(new GetCommand({
-      TableName: TABLE,
-      Key: { id }
-    }));
+    const existing = await db.send(
+      new GetCommand({
+        TableName: TABLE,
+        Key: { id },
+      }),
+    );
 
     if (!existing.Item) {
       return res.status(404).json({ message: "User not found" });
@@ -336,7 +350,8 @@ app.patch("/users/:id", auth, async (req, res) => {
     }
 
     const keys = Object.keys(data);
-    const UpdateExpression = "set " + keys.map((k) => `#${k} = :${k}`).join(", ");
+    const UpdateExpression =
+      "set " + keys.map((k) => `#${k} = :${k}`).join(", ");
     const ExpressionAttributeNames = {};
     const ExpressionAttributeValues = {};
 
@@ -345,13 +360,15 @@ app.patch("/users/:id", auth, async (req, res) => {
       ExpressionAttributeValues[`:${k}`] = data[k];
     });
 
-    await db.send(new UpdateCommand({
-      TableName: TABLE,
-      Key: { id },
-      UpdateExpression,
-      ExpressionAttributeNames,
-      ExpressionAttributeValues
-    }));
+    await db.send(
+      new UpdateCommand({
+        TableName: TABLE,
+        Key: { id },
+        UpdateExpression,
+        ExpressionAttributeNames,
+        ExpressionAttributeValues,
+      }),
+    );
 
     res.json({ message: "User partially updated" });
   } catch (error) {
@@ -387,10 +404,12 @@ app.patch("/users/:id", auth, async (req, res) => {
 app.get("/users/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await db.send(new GetCommand({
-      TableName: TABLE,
-      Key: { id }
-    }));
+    const result = await db.send(
+      new GetCommand({
+        TableName: TABLE,
+        Key: { id },
+      }),
+    );
     if (!result.Item) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -426,10 +445,12 @@ app.get("/users/:id", auth, async (req, res) => {
 app.delete("/users/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
-    await db.send(new DeleteCommand({
-      TableName: TABLE,
-      Key: { id }
-    }));
+    await db.send(
+      new DeleteCommand({
+        TableName: TABLE,
+        Key: { id },
+      }),
+    );
     res.json({ message: `User ${id} deleted` });
   } catch (error) {
     console.error("Error deleting user", error);
@@ -437,13 +458,11 @@ app.delete("/users/:id", auth, async (req, res) => {
   }
 });
 
-
-
 /**
  * @swagger
  * /me:
  *   get:
- *     summary: To check the Session 
+ *     summary: To check the Session
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -453,38 +472,34 @@ app.delete("/users/:id", auth, async (req, res) => {
  *         description: Unauthorized
  */
 
-app.get("/me", auth , (req,res) => {
-    try{
-      if(req.session && req.session.user){
-        return res.json(
-          {
-             loggedIn:true,
-             source:"session",
-             user:req.session.user
-          })
-      }
-
-      if(req.user){
-        return res.json({
-          loggedIn:true,
-          source:"jwt",
-          user:req.user
-        })
-      }
-
-      res.status(401).json({
-        message:"Un Authorised Access to view Session Detail "
-      })
+app.get("/me", auth, (req, res) => {
+  try {
+    if (req.session && req.session.user) {
+      return res.json({
+        loggedIn: true,
+        source: "session",
+        user: req.session.user,
+      });
     }
-    catch(error){
-      console.error("Error ",error)
-      res.status(401).json({
-        message:"Error in Session Configuration"
-      })
 
+    if (req.user) {
+      return res.json({
+        loggedIn: true,
+        source: "jwt",
+        user: req.user,
+      });
     }
-} )
 
+    res.status(401).json({
+      message: "Un Authorised Access to view Session Detail ",
+    });
+  } catch (error) {
+    console.error("Error ", error);
+    res.status(401).json({
+      message: "Error in Session Configuration",
+    });
+  }
+});
 
 /**
  * @swagger
@@ -502,31 +517,29 @@ app.get("/me", auth , (req,res) => {
  *         description: Error logging out
  */
 
-app.post("/logout" ,auth ,(req,res) =>{
-  try{
-    if(req.session){
-      req.session.destroy((err)=>{
-         if(err){
-            console.log("Error ",err);
-            res.status(500).json({
-              message:"Logout Failed"
-            });
+app.post("/logout", auth, (req, res) => {
+  try {
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) {
+          console.log("Error ", err);
+          res.status(500).json({
+            message: "Logout Failed",
+          });
         }
-      
-      res.clearCookie("token"); //token 
-      res.clearCookie("connect.sid"); //session id 
+        res.clearCookie("token"); //token
+        res.clearCookie("connect.sid"); //session id
+        return res.status(200).json({ message: "Logged out Successfully" });
       });
+    } else {
+      res.clearCookie("token"); //token
+      res.clearCookie("connect.sid"); //session id
+      return res.status(200).json({ message: "Logged out Successfully" });
     }
-    else{
-      res.clearCookie("token"); //token 
-      res.clearCookie("connect.sid"); //session id 
-      return res.status(200).json({message:"Logged out Successfully"});
-    }
-  }
-  catch(error){
+  } catch (error) {
     console.error("Error logging out", error);
-    res.status(500).json({message:"Error Logging out"});
+    res.status(500).json({ message: "Error Logging out" });
   }
-})
+});
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
