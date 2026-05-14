@@ -9,6 +9,7 @@ import jwt from "jsonwebtoken";
 import swaggerUi from "swagger-ui-express";
 import swaggerSpec from "./swagger.js";
 import auth from "./middleware.js";
+import cookieParser from "cookie-parser";
 
 dotenv.config();
 
@@ -19,8 +20,13 @@ const client = new DynamoDBClient({ region: "eu-north-1" });
 const db = DynamoDBDocumentClient.from(client);
 const TABLE = "development";
 
-app.use(cors());
+app.use(cors({ 
+  origin:true,
+  crederntials:true
+}
+));
 app.use(express.json());
+app.use(cookieParser());
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 /**
@@ -159,6 +165,13 @@ app.post("/login", async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
+
+    res.cookie("token" ,token, {
+      httpOnly:true,
+      secure:true,
+      sameSite:true,
+      maxAge:1000*60*60
+    })
 
     res.json({
       message: "Login successful",
@@ -403,5 +416,33 @@ app.delete("/users/:id", auth, async (req, res) => {
     res.status(500).json({ message: "Error deleting user" });
   }
 });
+
+/**
+ * @swagger
+ * /logout:
+ *   post:
+ *     summary: Logout from the application
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Logout successful
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Error logging out
+ */
+
+app.post("/logout" ,auth ,(req,res) =>{
+  try{
+
+    res.clearCookie("token");
+    res.json({message:"Logged out Successfully"});
+  }
+  catch(error){
+    console.error("Error logging out", error);
+    res.status(500).json({message:"Error Logging out"});
+  }
+})
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
