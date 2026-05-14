@@ -441,7 +441,7 @@ app.delete("/users/:id", auth, async (req, res) => {
 
 /**
  * @swagger
- * /me
+ * /me:
  *   get:
  *     summary: To check the Session 
  *     security:
@@ -467,7 +467,7 @@ app.get("/me", auth , (req,res) => {
       if(req.user){
         return res.json({
           loggedIn:true,
-          source:jwt,
+          source:"jwt",
           user:req.user
         })
       }
@@ -477,9 +477,9 @@ app.get("/me", auth , (req,res) => {
       })
     }
     catch(error){
-      console.error("Error ",err)
+      console.error("Error ",error)
       res.status(401).json({
-        message:"Erro in Session Configuration"
+        message:"Error in Session Configuration"
       })
 
     }
@@ -505,16 +505,17 @@ app.get("/me", auth , (req,res) => {
 app.post("/logout" ,auth ,(req,res) =>{
   try{
     if(req.session){
-      req.destroy((err)=>{
+      req.session.destroy((err)=>{
          if(err){
             console.log("Error ",err);
             res.status(500).json({
               message:"Logout Failed"
-            })
+            });
         }
-      })
+      
       res.clearCookie("token"); //token 
       res.clearCookie("connect.sid"); //session id 
+      });
     }
     else{
       res.clearCookie("token"); //token 
